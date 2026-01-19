@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpriteMaster - 图片处理工具</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+    
+    <header class="app-header">
+        <div class="logo-area">
+            <div class="logo-icon">S</div>
+            <h1>Sprite<span class="highlight">Master</span></h1>
+        </div>
+        
+        <nav class="top-nav">
+            <button class="nav-btn active" data-tab="split">
+                <i class="ri-scissors-cut-line"></i> 图片分割
+            </button>
+            <button class="nav-btn" data-tab="merge">
+                <i class="ri-collage-line"></i> 图集合并
+            </button>
+            <button class="nav-btn" data-tab="removebg">
+                <i class="ri-delete-bin-line"></i> 去除背景
+            </button>
+        </nav>
+
+    </header>
+
+    <div class="app-body">
+        
+        <main class="canvas-area">
+            <div class="canvas-toolbar">
+                <span class="toolbar-info" id="canvas-info">未选择图片</span>
+                <div class="zoom-controls">
+                    <button class="tool-btn"><i class="ri-subtract-line"></i></button>
+                    <span class="zoom-text">100%</span>
+                    <button class="tool-btn"><i class="ri-add-line"></i></button>
+                </div>
+            </div>
+
+            <div class="canvas-viewport checkerboard">
+                <div id="split-panel-canvas" class="canvas-layer active">
+                    <div id="split-preview" class="empty-state-placeholder"></div>
+                    <div id="split-grid-preview" class="grid-overlay hidden">
+                        <img id="split-grid-image" class="overlay-img">
+                    </div>
+                    <div id="split-result" class="result-overlay hidden">
+                         <div id="split-files" class="result-grid"></div>
+                    </div>
+                    <div id="irregular-preview" class="hidden"></div>
+                    <div id="irregular-grid-preview" class="grid-overlay hidden"><img id="irregular-grid-image" class="overlay-img"></div>
+                    <div id="irregular-result" class="result-overlay hidden"><div id="irregular-files" class="result-grid"></div></div>
+                    <div id="bbox-preview" class="hidden"></div>
+                    <div id="bbox-grid-preview" class="grid-overlay hidden"><img id="bbox-grid-image" class="overlay-img"></div>
+                    <div id="bbox-result" class="result-overlay hidden"><div id="bbox-files" class="result-grid"></div></div>
+                </div>
+
+                <div id="merge-panel-canvas" class="canvas-layer">
+                     <div id="merge-preview" class="preview-grid-container"></div>
+                     <div id="merge-grid-preview" class="hidden">
+                        <img id="merge-grid-image">
+                     </div>
+                     <div id="merge-result" class="hidden">
+                        <img id="merged-image">
+                     </div>
+                     <div id="compact-merge-preview" class="preview-grid-container"></div>
+                     <div id="compact-merge-grid-preview" class="hidden"><img id="compact-merge-grid-image"></div>
+                     <div id="compact-merge-result" class="hidden"><img id="compact-merged-image"></div>
+                </div>
+
+                <div id="tool-bg-canvas" class="canvas-layer">
+                    <div id="bg-preview-container" class="bg-center-wrapper">
+                        <canvas id="bg-canvas"></canvas>
+                        <div class="click-hint" id="click-hint" style="display: none;">点击图片取色</div>
+                    </div>
+                    <div id="bg-result" class="grid-overlay hidden">
+                        <img id="bg-result-image" class="overlay-img">
+                    </div>
+                </div>
+
+                <div id="loading" class="loading-overlay hidden">
+                    <div class="spinner"></div>
+                    <p>Processing...</p>
+                </div>
+            </div>
+        </main>
+
+        <aside class="properties-panel">
+            <div class="panel-content-scroll">
+
+                <section id="split-panel" class="panel active">
+                        <div class="control-group">
+                            <label class="control-label">模式选择</label>
+                            <nav class="segment-control">
+                                <button class="segment-btn active" data-subtab="grid">网格分割</button>
+                                <button class="segment-btn" data-subtab="irregular">智能分割</button>
+                            </nav>
+                        </div>
+
+                        <div id="grid-subpanel" class="subpanel active">
+                            <div class="control-group">
+                                <label class="control-label">源文件</label>
+                                <div class="file-upload-btn-group">
+                                    <input type="file" id="split-image" accept="image/*" class="hidden-input">
+                                    <label for="split-image" class="btn btn-outline full-width">
+                                        <i class="ri-upload-2-line"></i> 选择图片
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label">网格尺寸 (行 x 列)</label>
+                                <div class="input-row">
+                                    <div class="input-wrapper">
+                                        <span class="prefix">行</span>
+                                        <input type="number" id="split-rows" value="4" min="1">
+                                    </div>
+                                    <div class="input-wrapper">
+                                        <span class="prefix">列</span>
+                                        <input type="number" id="split-cols" value="4" min="1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <div class="flex-between">
+                                    <label class="control-label">边距 (Padding)</label>
+                                    <small class="text-muted">px</small>
+                                </div>
+                                <div class="grid-2x2">
+                                    <div class="input-wrapper"><span class="prefix">上</span><input type="number" id="margin-top" value="0"></div>
+                                    <div class="input-wrapper"><span class="prefix">下</span><input type="number" id="margin-bottom" value="0"></div>
+                                    <div class="input-wrapper"><span class="prefix">左</span><input type="number" id="margin-left" value="0"></div>
+                                    <div class="input-wrapper"><span class="prefix">右</span><input type="number" id="margin-right" value="0"></div>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label">输出设置</label>
+                                <div class="input-wrapper"><span class="prefix">前缀</span><input type="text" id="split-prefix" value="sprite" class="input-dark"></div>
+                            </div>
+
+                            <div class="action-area">
+                                <button id="split-preview-btn" class="btn btn-secondary full-width">预览网格</button>
+                                <button id="split-btn" class="btn btn-primary full-width mt-2">开始分割</button>
+                                <button id="split-download-all" class="btn btn-success full-width mt-2 hidden">下载全部</button>
+                            </div>
+                        </div>
+
+                        <div id="irregular-subpanel" class="subpanel">
+                            <div class="control-group">
+                                <label class="control-label">智能算法</label>
+                                <select id="smart-split-mode" class="select-dark">
+                                    <option value="grid">网格模式 (自动检测行/列)</option>
+                                    <option value="bbox">边界框模式 (紧凑包裹)</option>
+                                </select>
+                            </div>
+
+                            <div id="grid-mode-content">
+                                <div class="control-group">
+                                    <label class="control-label">源文件</label>
+                                    <input type="file" id="irregular-image" accept="image/*" class="hidden-input">
+                                    <label for="irregular-image" class="btn btn-outline full-width"><i class="ri-upload-2-line"></i> 选择图片</label>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label">边距调整</label>
+                                    <div class="grid-2x2">
+                                        <div class="input-wrapper"><span class="prefix">上</span><input type="number" id="irregular-margin-top" value="0"></div>
+                                        <div class="input-wrapper"><span class="prefix">下</span><input type="number" id="irregular-margin-bottom" value="0"></div>
+                                        <div class="input-wrapper"><span class="prefix">左</span><input type="number" id="irregular-margin-left" value="0"></div>
+                                        <div class="input-wrapper"><span class="prefix">右</span><input type="number" id="irregular-margin-right" value="0"></div>
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label">检测阈值</label>
+                                    <div class="input-row">
+                                        <div class="input-wrapper"><span class="prefix">Alpha</span><input type="number" id="detect-threshold" value="10"></div>
+                                        <div class="input-wrapper"><span class="prefix">Gap</span><input type="number" id="detect-min-gap" value="5"></div>
+                                    </div>
+                                </div>
+                                <div id="split-lines-editor" class="control-group hidden">
+                                    <label class="control-label">手动修正分割点</label>
+                                    <textarea id="rows-split-input" class="textarea-dark" rows="2"></textarea>
+                                    <textarea id="cols-split-input" class="textarea-dark mt-2" rows="2"></textarea>
+                                    <button id="update-irregular-preview" class="btn btn-xs mt-1">更新</button>
+                                </div>
+
+                                <div class="action-area">
+                                    <button id="detect-btn" class="btn btn-secondary full-width">预览网格</button>
+                                    <button id="irregular-split-btn" class="btn btn-primary full-width mt-2" disabled>开始分割</button>
+                                    <button id="irregular-download-all" class="btn btn-success full-width mt-2 hidden">下载全部</button>
+                                    <input type="text" id="irregular-prefix" class="hidden" value="sprite">
+                                </div>
+                            </div>
+
+                            <div id="bbox-mode-content" class="hidden">
+                                <div class="control-group">
+                                    <label class="control-label">源文件</label>
+                                    <input type="file" id="bbox-image" accept="image/*" class="hidden-input">
+                                    <label for="bbox-image" class="btn btn-outline full-width"><i class="ri-upload-2-line"></i> 选择图片</label>
+                                </div>
+                                
+                                <div class="control-group">
+                                    <label class="control-label">边距</label>
+                                    <div class="grid-2x2">
+                                        <div class="input-wrapper"><span class="prefix">上</span><input type="number" id="bbox-margin-top" value="0"></div>
+                                        <div class="input-wrapper"><span class="prefix">下</span><input type="number" id="bbox-margin-bottom" value="0"></div>
+                                        <div class="input-wrapper"><span class="prefix">左</span><input type="number" id="bbox-margin-left" value="0"></div>
+                                        <div class="input-wrapper"><span class="prefix">右</span><input type="number" id="bbox-margin-right" value="0"></div>
+                                    </div>
+                                </div>
+
+                                <div class="control-group">
+                                    <label class="control-label">检测阈值</label>
+                                    <div class="input-row">
+                                        <div class="input-wrapper"><span class="prefix">阈值</span><input type="number" id="bbox-threshold" value="10"></div>
+                                        <div class="input-wrapper"><span class="prefix">最小</span><input type="number" id="bbox-min-size" value="10"></div>
+                                    </div>
+                                </div>
+
+                                <div class="control-group">
+                                    <label class="checkbox-wrapper">
+                                        <input type="checkbox" id="bbox-uniform-size">
+                                        <span>统一输出尺寸</span>
+                                    </label>
+                                    <div id="bbox-uniform-size-options" class="input-row mt-2 hidden">
+                                        <input type="number" id="bbox-uniform-width" placeholder="W">
+                                        <input type="number" id="bbox-uniform-height" placeholder="H">
+                                    </div>
+                                </div>
+
+                                <input type="text" id="bbox-prefix" value="sprite" class="hidden">
+
+                                <div class="action-area">
+                                    <button id="bbox-detect-btn" class="btn btn-secondary full-width">预览网格</button>
+                                    <button id="bbox-split-btn" class="btn btn-primary full-width mt-2" disabled>开始分割</button>
+                                    <button id="bbox-download-all" class="btn btn-success full-width mt-2 hidden">下载全部</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="merge-panel" class="panel">
+                        <div class="control-group">
+                            <label class="control-label">模式选择</label>
+                            <nav class="segment-control">
+                                <button class="segment-btn active" data-subtab="merge-grid">网格合并</button>
+                                <button class="segment-btn" data-subtab="merge-compact">紧凑合并</button>
+                            </nav>
+                        </div>
+                        
+                        <div id="merge-grid-subpanel" class="subpanel active">
+                            <div class="control-group">
+                                <label class="control-label">源文件</label>
+                                <input type="file" id="merge-images" accept="image/*" multiple class="hidden-input">
+                                <label for="merge-images" class="btn btn-outline full-width">添加图片</label>
+                                <button id="merge-clear-btn" class="btn btn-text text-danger mt-1" style="display:none">清空列表</button>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label">网格布局</label>
+                                <div class="input-row">
+                                    <div class="input-wrapper"><span class="prefix">行</span><input type="number" id="merge-rows" value="4"></div>
+                                    <div class="input-wrapper"><span class="prefix">列</span><input type="number" id="merge-cols" value="4"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="control-group">
+                                <label class="control-label">单元格尺寸</label>
+                                <div class="input-row">
+                                    <div class="input-wrapper"><span class="prefix">W</span><input type="number" id="cell-width" value="64"></div>
+                                    <div class="input-wrapper"><span class="prefix">H</span><input type="number" id="cell-height" value="64"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="control-group">
+                                <label class="control-label">间距</label>
+                                <input type="number" id="merge-padding" value="0">
+                            </div>
+
+                            <div class="action-area">
+                                <button id="merge-preview-btn" class="btn btn-secondary full-width">预览</button>
+                                <button id="merge-btn" class="btn btn-primary full-width mt-2">合并</button>
+                                <button id="merge-download" class="hidden"></button>
+                            </div>
+                            <p id="merge-size-info" class="hidden"></p>
+                        </div>
+
+                        <div id="merge-compact-subpanel" class="subpanel">
+                            <div class="control-group">
+                                <label class="control-label">源文件</label>
+                                <input type="file" id="compact-merge-images" accept="image/*" multiple class="hidden-input">
+                                <label for="compact-merge-images" class="btn btn-outline full-width">添加图片</label>
+                                <button id="compact-merge-clear-btn" class="btn btn-text text-danger" style="display:none">清空</button>
+                            </div>
+                            
+                            <div class="control-group">
+                                <label class="control-label">图集最大尺寸</label>
+                                <select id="compact-atlas-size" class="select-dark">
+                                    <option value="">自动</option>
+                                    <option value="512">512px</option>
+                                    <option value="1024">1024px</option>
+                                    <option value="2048">2048px</option>
+                                </select>
+                            </div>
+                             <div class="control-group">
+                                <label class="control-label">间距</label>
+                                <input type="number" id="compact-padding" value="2">
+                            </div>
+                            <div class="action-area">
+                                <button id="compact-merge-preview-btn" class="btn btn-secondary full-width">预览</button>
+                                <button id="compact-merge-btn" class="btn btn-primary full-width mt-2">合并</button>
+                                <button id="compact-merge-download" class="hidden"></button>
+                            </div>
+                            <p id="compact-merge-size-info" class="hidden"></p>
+                        </div>
+                    </section>
+
+                    <section id="removebg-panel" class="panel">
+                        <div class="control-group">
+                            <label class="control-label">源文件</label>
+                            <input type="file" id="bg-image" accept="image/*" class="hidden-input">
+                            <label for="bg-image" class="btn btn-outline full-width">选择图片</label>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">算法</label>
+                            <select id="bg-method" class="select-dark">
+                                <option value="color">颜色容差 (简单)</option>
+                                <option value="picker">吸管取色</option>
+                                <option value="ai">AI 智能抠图</option>
+                            </select>
+                        </div>
+
+                        <div id="tolerance-group" class="control-group">
+                             <div class="flex-between">
+                                <label class="control-label">容差</label>
+                                <span id="tolerance-value" class="badge">30</span>
+                            </div>
+                            <input type="range" id="bg-tolerance" min="0" max="100" value="30" class="slider">
+                        </div>
+
+                        <div id="ai-model-group" class="control-group hidden">
+                            <label class="control-label">模型精度</label>
+                            <select id="ai-model" class="select-dark">
+                                <option value="u2net">高精度 (慢)</option>
+                                <option value="u2netp">轻量级 (快)</option>
+                            </select>
+                        </div>
+
+                        <div id="selected-color-group" class="control-group hidden">
+                            <label class="control-label">已选颜色</label>
+                            <div class="color-row">
+                                <div id="selected-color-box" class="color-preview-box"></div>
+                                <span id="selected-color-hex">#FFF</span>
+                                <button id="clear-color-btn" class="btn btn-xs">清除</button>
+                            </div>
+                        </div>
+
+                        <div class="action-area">
+                            <button id="open-zoom-modal-btn" class="btn btn-info full-width mb-2 hidden">放大取色</button>
+                            <button id="bg-preview-btn" class="btn btn-primary full-width" disabled>执行去除</button>
+                            <button id="bg-download-btn" class="btn btn-success full-width mt-2 hidden">下载</button>
+                        </div>
+                    </section>
+
+            </div>
+        </aside>
+
+    </div>
+
+    <div id="zoom-modal" class="zoom-modal hidden">
+        <div class="zoom-modal-content">
+            <div class="modal-header">
+                <h3>精确取色</h3>
+                <button id="zoom-modal-close" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-viewport">
+                <canvas id="zoom-modal-canvas"></canvas>
+            </div>
+            <div class="modal-controls">
+                <div class="zoom-ops">
+                    <button id="modal-zoom-out-btn">-</button>
+                    <span id="modal-zoom-level">100%</span>
+                    <button id="modal-zoom-in-btn">+</button>
+                </div>
+                <div class="color-confirm-area">
+                    <div id="modal-selected-color-box" class="color-preview-box small"></div>
+                    <span id="modal-selected-color-hex">#---</span>
+                    <button id="modal-confirm-color-btn" class="btn btn-primary btn-sm">确认</button>
+                </div>
+                <button id="modal-zoom-reset-btn" class="hidden"></button> </div>
+             <div id="zoom-modal-canvas-container" class="hidden"></div>
+        </div>
+    </div>
+
+    <script src="/static/js/config.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
