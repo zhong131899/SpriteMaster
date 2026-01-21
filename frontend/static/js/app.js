@@ -630,9 +630,8 @@ function initToolboxFunctionality() {
     methodSelect.addEventListener('change', () => {
         const val = methodSelect.value;
         document.getElementById('tolerance-group').style.display = (val === 'color' || val === 'picker') ? 'block' : 'none';
-        document.getElementById('ai-model-group').classList.toggle('hidden', val !== 'ai');
         document.getElementById('selected-color-group').classList.toggle('hidden', val !== 'picker');
-        
+
         checkPickerState();
     });
 
@@ -662,7 +661,6 @@ function initToolboxFunctionality() {
         formData.append('method', method);
         formData.append('tolerance', document.getElementById('bg-tolerance').value);
         if(selectedColor) formData.append('target_color', selectedColor);
-        if(method === 'ai') formData.append('ai_model', document.getElementById('ai-model').value);
 
         showLoading();
         try {

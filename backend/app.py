@@ -537,13 +537,6 @@ def remove_background():
                 target_color=rgb,
                 tolerance=tolerance
             )
-        elif method == 'ai':
-            ai_model = request.form.get('ai_model', 'u2net')
-            result_path = processor.remove_background_ai(
-                image_path=input_path,
-                output_path=output_path,
-                model=ai_model
-            )
         else:
             return jsonify({'error': '不支持的方法'}), 400
 
@@ -586,12 +579,6 @@ def preview_remove_background():
                     image_path=temp_path,
                     target_color=rgb,
                     tolerance=tolerance
-                )
-            elif method == 'ai':
-                ai_model = request.form.get('ai_model', 'u2net')
-                preview_base64 = processor.preview_remove_background_ai(
-                    image_path=temp_path,
-                    model=ai_model
                 )
             else:
                 return jsonify({'error': '不支持的方法'}), 400

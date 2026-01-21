@@ -1024,39 +1024,6 @@ class ImageProcessor:
         return output_path
 
     @staticmethod
-    def remove_background_ai(
-        image_path: str,
-        output_path: str,
-        model: str = "u2net"
-    ) -> str:
-        """
-        使用AI方法去除背景（rembg库）
-
-        Args:
-            image_path: 输入图片路径
-            output_path: 输出图片路径
-            model: 模型选择，可选 "u2net"（全量，精度高）或 "u2netp"（轻量，速度快）
-
-        Returns:
-            输出图片路径
-        """
-        try:
-            from rembg import remove, new_session
-        except ImportError:
-            raise ImportError("rembg库未安装，请运行: pip install rembg")
-
-        with open(image_path, 'rb') as f:
-            input_data = f.read()
-
-        session = new_session(model)
-        output_data = remove(input_data, session=session, only_mask=False)
-
-        with open(output_path, 'wb') as f:
-            f.write(output_data)
-
-        return output_path
-
-    @staticmethod
     def preview_remove_background_color(
         image_path: str,
         tolerance: int = 30
@@ -1083,24 +1050,6 @@ class ImageProcessor:
         result.save(buffer, format='PNG')
         buffer.seek(0)
         return base64.b64encode(buffer.read()).decode('utf-8')
-
-    @staticmethod
-    def preview_remove_background_ai(
-        image_path: str,
-        model: str = "u2net"
-    ) -> str:
-        try:
-            from rembg import remove, new_session
-        except ImportError:
-            raise ImportError("rembg库未安装，请运行: pip install rembg")
-
-        with open(image_path, 'rb') as f:
-            input_data = f.read()
-
-        session = new_session(model)
-        output_data = remove(input_data, session=session, only_mask=False)
-
-        return base64.b64encode(output_data).decode('utf-8')
 
     @staticmethod
     def detect_bounding_boxes(
